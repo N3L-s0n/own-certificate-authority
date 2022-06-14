@@ -16,8 +16,6 @@ is_installed () {
     fi
 }
 
-echo $USER
-
 is_groupinstalled () {
 
     if yum grouplist installed "$@" >/dev/null 2>&1; then
