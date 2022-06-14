@@ -16,15 +16,6 @@ is_installed () {
     fi
 }
 
-is_groupinstalled () {
-
-    if yum grouplist installed "$@" >/dev/null 2>&1; then
-        true
-    else
-        false
-    fi
-}
-
 if [ "$EUID" -ne 0 ]
     then echo "Please run as root"
     exit
@@ -42,11 +33,7 @@ else
 fi
 
 # DEVELOPMENT TOOLS
-if is_groupinstalled 'Development Tools'; then
-    echo "Development Tools ... already installed"
-else
-    yum group install 'Development Tools' -y
-fi
+yum group install 'Development Tools' -y
 
 # PERL-CORE
 if is_installed 'perl-core'; then
@@ -103,11 +90,15 @@ fi
 
 # LINK LIBRARIES
 
-if [[ -f "/etc/ld.so.conf.d/$OPENSSL_DIR.conf" ]]; then
-    echo "libraries conf ... already exists"
+if [[ -d "$SSL_DIR/lib" ]]; then
+    if [[ -f "/etc/ld.so.conf.d/$OPENSSL_DIR.conf" ]]; then
+        echo "libraries conf ... already exists"
+    else
+        echo "$SSL_DIR/lib" > /etc/ld.so.conf.d/$OPENSSL_DIR.conf
+        ldconfig -v
+    fi
 else
-    echo "$SSL_DIR/lib" > /etc/ld.so.conf.d/$OPENSSL_DIR.conf
-    ldconfig -v
+    echo "$SSL_DIR/lib ... not found. Probably openssl uninstalled."
 fi
 
 # CONFIGURE BINARY
