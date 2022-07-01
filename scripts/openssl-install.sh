@@ -23,7 +23,7 @@ fi
 
 echo "Installing Dependencies"
 
-#yum -y update
+yum -y update
 
 # MAKE
 if is_installed 'make'; then
