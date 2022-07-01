@@ -1,0 +1,11 @@
+---
+- hosts: all
+
+  tasks:
+    - name: Test connection and runnable playbook
+      command: hostname
+      register: output
+
+
+    - debug:
+        var: output.stdout_lines
