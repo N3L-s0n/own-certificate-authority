@@ -37,6 +37,7 @@ $ git clone https://github.com/N3L-s0n/own-certificate-authority.git
 Now that we have where to run our playbooks we can execute the `playbooks/ownca-setup.yml` playbook. It needs no variables but you can choose different OpenSSL and Python3.10 versions. This was tested using [openssl-1.1.1p](https://www.openssl.org/source/) and [Python-3.10.5](https://www.python.org/downloads/release/python-3105/)
 
 ```sh
+# playbooks/ownca-setup.yml
 ---
 - hosts: all
 
