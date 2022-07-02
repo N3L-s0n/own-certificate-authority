@@ -57,15 +57,42 @@ To run the playbook you have to set the host machine and connection, since we're
 Change **&lt;user&gt;** with the username you used with ssh.
 
 ```sh
-$ ansible-playbook -i localhost, --connection local playbooks/ownca-setup.yml -u <username>
+$ ansible-playbook -i localhost, --connection local playbooks/ownca-setup.yml -u <user>
 $ export PATH="~/.local/bin:$PATH"
 ```
-
-
 
 <br>
 
 After this we should have OpenSSL, Python3.10, [Cryptography](https://pypi.org/project/cryptography/) and Ansible > core 2.13.0. 
+
+### Selfsigned CA certificate
+
+Now to get a certificate for our CA, we need to create a private key with a passphrase, a certificate signing request (CSR) and then create the certificate from this CSR using the generated key. This is all done by the playbook `playbooks/ownca-certificate.yml` you just need to set the variable for the passphrase, e.g `--extra-vars "secret_ca_passphrase=test_password"`. The private key uses the **RSA** cryptosystem with a **2048** size. Certificate basic data like country name and state can also be set using variables. The defaults one are:
+
+```sh
+# playbooks/ca-csr-vars.yml
+# You must change these according to your needs
+---
+country_name:             "CR"
+state_or_province_name:   "San Jose"
+locality_name:            "San Pedro"
+organization_name:        "CI-0143 I-2022 Ltd"
+organizational_unit_name: "Grupo 1"
+common_name:              "Seguridad grupo 1 CA"
+
+```
+
+To run the playbook execute the command below.
+
+<br>
+
+Change **&lt;user&gt;** with the username you used with ssh and **&lt;password&gt;** with your passphrase for the key.
+
+```sh
+$ ansible-playbook -i localhost, --connection local playbooks/ownca-certificate.yml -u <user> --extra-vars "secret_ca_passphrase=<password>"
+```
+
+The private key and certificate are created in `/etc/pki/CA/`
 
 ## Running Ansible in local host
 
