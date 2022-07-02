@@ -55,16 +55,33 @@
   block:
     - name: Run OpenSSL config
       ansible.builtin.command:
-        cmd: /home/{{ ansible_user }}/Downloads/openssl-{{ openssl_version }}/.config
+        chdir: /home/{{ ansible_user }}/Downloads/openssl-{{ openssl_version }}
+        cmd: ./config
         creates: /home/{{ ansible_user }}/Downloads/openssl-{{ openssl_version }}/Makefile
 
-    - name: Run Make commands ( This takes a while. ~25 min )
+    - name: Run Make command ( This takes a while. ~5 min )
       ansible.builtin.command:
-        argv:
-          - make -C /home/{{ ansible_user }}/Downloads/openssl-{{ openssl_version }}
-          - make install -C /home/{{ ansible_user }}/Downloads/openssl-{{ openssl_version }}
-        creates: /usr/local/ssl/bin/openssl
+        chdir: /home/{{ ansible_user }}/Downloads/openssl-{{ openssl_version }}
+        cmd: make
+        creates: /usr/local/bin/openssl
       become: yes
+
+    - name: Run Make install command ( This takes a while. ~5 min )
+      ansible.builtin.command:
+        chdir: /home/{{ ansible_user }}/Downloads/openssl-{{ openssl_version }}
+        cmd: make install
+        creates: /usr/local/bin/openssl
+      become: yes
+
+    - name: Create symbolic link to new libssl & libcrypto
+      ansible.builtin.file:
+        src: /usr/local/lib64/{{ item }}
+        dest: /usr/lib64/{{ item }}
+        state: link
+      become: yes
+      with_items:
+        - libssl.so.1.1
+        - libcrypto.so.1.1
 
     - name: Remove old OpenSSL bin file
       ansible.builtin.file:
@@ -74,7 +91,7 @@
 
     - name: Create symbolic link to new bin
       ansible.builtin.file:
-        src: /usr/local/ssl/bin/openssl
+        src: /usr/local/bin/openssl
         dest: /usr/bin/openssl
         state: link 
       become: yes

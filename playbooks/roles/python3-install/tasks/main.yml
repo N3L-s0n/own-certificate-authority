@@ -44,13 +44,14 @@
   block:
     - name: Run Python3 config
       ansible.builtin.command:
-        cmd: /home/{{ ansible_user }}/Downloads/Python-{{ python3_version }}/.configure --enable-optimizations --with-openssl={{ openssl_path }}
+        chdir: /home/{{ ansible_user }}/Downloads/Python-{{ python3_version }}
+        cmd: ./configure --enable-optimizations --with-openssl={{ openssl_path }}
         creates: /home/{{ ansible_user }}/Downloads/Python-{{ python3_version }}/Makefile
 
     - name: Run Make command ( This takes a while. ~5 min )
       ansible.builtin.command:
-        argv:
-          - make altinstall -C /home/{{ ansible_user }}/Downloads/Python-{{ python3_version }}
+        chdir: /home/{{ ansible_user }}/Downloads/Python-{{ python3_version }}
+        cmd: make altinstall
         creates: /usr/local/lib/python3.10
       become: yes
   tags:
