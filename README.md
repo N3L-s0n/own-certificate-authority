@@ -25,11 +25,11 @@ In this case Ansible is installed in the remote host.
 If Ansible is not installed in the remote host you can run the script in `scripts/ansible-install.sh`. To do this you can use the following comand from the repository main directory where &lt;user&gt; is the username of the remote machine and &lt;host&gt; the IP address or hostname of the remote machine. This script is going to update the yum repositories and install an older version of Ansible which is fine for now, it will install git too.
 
 ```sh
-$ ssh <user>@<host> 'sudo bash -s' < scripts/ansible-install.sh
+ssh <user>@<host> 'sudo bash -s' < scripts/ansible-install.sh
 ```
 After this we have to get an ssh console in the machine and clone the repository here too. Run this command in your user's home directory
 ```sh
-$ git clone https://github.com/N3L-s0n/own-certificate-authority.git
+git clone https://github.com/N3L-s0n/own-certificate-authority.git
 ```
 
 ### Install OpenSSL and Python3.10
@@ -57,8 +57,8 @@ To run the playbook you have to set the host machine and connection, since we're
 Change **&lt;user&gt;** with the username you used with ssh.
 
 ```sh
-$ ansible-playbook -i localhost, --connection local playbooks/ownca-setup.yml -u <user>
-$ export PATH="~/.local/bin:$PATH"
+ansible-playbook -i localhost, --connection local playbooks/ownca-setup.yml -u <user>;
+export PATH="~/.local/bin:$PATH";
 ```
 
 <br>
@@ -89,7 +89,7 @@ To run the playbook execute the command below.
 Change **&lt;user&gt;** with the username you used with ssh and **&lt;password&gt;** with your passphrase for the key.
 
 ```sh
-$ ansible-playbook -i localhost, --connection local playbooks/ownca-certificate.yml -u <user> --extra-vars "secret_ca_passphrase=<password>"
+ansible-playbook -i localhost, --connection local playbooks/ownca-certificate.yml -u <user> --extra-vars "secret_ca_passphrase=<password>"
 ```
 
 The private key and certificate are created in `/etc/pki/CA/`
