@@ -31,6 +31,11 @@ After this we have to get an ssh console in the machine and clone the repository
 ```sh
 git clone https://github.com/N3L-s0n/own-certificate-authority.git
 ```
+And cd into the repository
+```sh
+cd own-certificate-authority
+```
+
 
 ### Install OpenSSL and Python3.10
 
@@ -57,12 +62,24 @@ To run the playbook you have to set the host machine and connection, since we're
 Change **&lt;user&gt;** with the username you used with ssh.
 
 ```sh
-ansible-playbook -i localhost, --connection local playbooks/ownca-setup.yml -u <user>;
-export PATH="~/.local/bin:$PATH";
+ansible-playbook -i localhost, --connection local playbooks/ownca-setup.yml -u <user>
+```
+
+Remove old ansible version
+
+```sh
+sudo yum remove ansible -y
+```
+
+Then run hash to forget about ansible previous location
+
+```sh
+hash -r
 ```
 
 <br>
 
+Now if you run `ansible --version` you should get at least `ansible [core 2.13.1]`. We'll use [Community.Crypto](https://docs.ansible.com/ansible/latest/collections/community/crypto/index.html) which should be already installed, you can check it by running `ansible-galaxy collection list` and searching for community.crypto.
 After this we should have OpenSSL, Python3.10, [Cryptography](https://pypi.org/project/cryptography/) and Ansible > core 2.13.0. 
 
 ### Selfsigned CA certificate
