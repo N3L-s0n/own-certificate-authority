@@ -1,0 +1,12 @@
+---
+- name: Install Ansible with pip3.10
+  ansible.builtin.pip:
+    name: ansible
+    executable: pip3.10
+    extra_args: --user
+
+- name: 'Add upgraded ansible to PATH'
+  ansible.builtin.shell:
+    cmd: export PATH=/home/{{ ansible_user }}/.local/bin:$PATH
+  tags:
+    - never
