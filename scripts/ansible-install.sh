@@ -30,3 +30,11 @@ else
     yum install wget -y
     echo "wget ... installed"
 fi
+
+# GIT
+if is_installed 'git'; then
+    echo "git ... already installed"
+else
+    yum install git -y
+    echo "git ... installed"
+fi

@@ -1,0 +1,30 @@
+---
+- hosts: all
+
+  roles:
+    - openssl-install
+    - python3-install
+
+# tasks:
+#   - name: Create private key ( 4096 bits, RSA )
+#     community.crypto.openssl_privatekey:
+#       path: /etc/pki/CA/private/ca-certificate.key
+#       passphrase: "{{ secret_ca_passphrase }} "
+#       type: RSA
+#       cipher: aes256
+#     tags:
+#       - ca-files
+#   - name: Create certificate signing request (CSR) for CA certificate
+#     community.crypto.openssl_csr_pipe:
+#       privatekey_path: /etc/pki/CA/private/ca-certificate.key
+#       privatekey_passphrase: "{{ secret_ca_passphrase }} "
+#       country_name: "{{ country_name }}"
+#       state_or_province_name: "{{ state_or_province_name }}"
+#       locality_name: "{{ locality_name }}"
+#       organization_name: "{{ organization_name }}"
+#       organizational_unit_name: "{{ organizational_unit_name }}"
+#       common_name: "{{ common_name }}"
+#     register: ca-csr
+
+#   - name: Create signed CA certificate from CSR
+      

@@ -1,0 +1,84 @@
+---
+- name: Install Dependencies
+  ansible.builtin.yum:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - "@Development tools"
+    - wget
+    - make
+    - tar
+    - perl-IPC-Cmd
+  become: yes
+  tags:
+    - openssl-dependencies
+
+- name: Create downloads directory
+  ansible.builtin.file:
+    path: /home/{{ ansible_user }}/Downloads
+    state: directory
+    mode: '0755'
+
+- name: Download OpenSSL tar file with checksum (sha256) 
+  block:
+    - name: Get checksum (sha256) file
+      ansible.builtin.uri:
+        url: https://www.openssl.org/source/openssl-{{ openssl_version }}.tar.gz.sha256
+        return_content: true
+      register: checksum
+
+    - name: Set checksum variable
+      ansible.builtin.set_fact:
+        openssl_checksum: "{{ checksum.content }}"
+
+    - name: Download file and check
+      ansible.builtin.get_url:
+        url: https://www.openssl.org/source/openssl-{{ openssl_version }}.tar.gz
+        dest: /home/{{ ansible_user }}/Downloads/openssl-{{ openssl_version }}.tar.gz
+        checksum: sha256:{{ openssl_checksum }}
+    
+    - name: Unarchive tar
+      ansible.builtin.unarchive:
+        src: /home/{{ ansible_user }}/Downloads/openssl-{{ openssl_version }}.tar.gz
+        dest: /home/{{ ansible_user }}/Downloads
+        remote_src: yes
+        creates: /home/{{ ansible_user }}/Downloads/openssl-{{ openssl_version }}
+
+    - name: Show Checksum used
+      ansible.builtin.debug:
+        msg: "{{ openssl_checksum }}"
+  when: ansible_facts['distribution'] == 'CentOS'
+  tags:
+    - openssl-download
+
+- name: Install downloaded OpenSSL
+  block:
+    - name: Run OpenSSL config
+      ansible.builtin.command:
+        cmd: /home/{{ ansible_user }}/Downloads/openssl-{{ openssl_version }}/.config
+        creates: /home/{{ ansible_user }}/Downloads/openssl-{{ openssl_version }}/Makefile
+
+    - name: Run Make commands ( This takes a while. ~25 min )
+      ansible.builtin.command:
+        argv:
+          - make -C /home/{{ ansible_user }}/Downloads/openssl-{{ openssl_version }}
+          - make install -C /home/{{ ansible_user }}/Downloads/openssl-{{ openssl_version }}
+        creates: /usr/local/ssl/bin/openssl
+      become: yes
+
+    - name: Remove old OpenSSL bin file
+      ansible.builtin.file:
+        path: /usr/bin/openssl
+        state: absent
+      become: yes
+
+    - name: Create symbolic link to new bin
+      ansible.builtin.file:
+        src: /usr/local/ssl/bin/openssl
+        dest: /usr/bin/openssl
+        state: link 
+      become: yes
+
+  tags:
+    - openssl-install
+

@@ -1,0 +1,57 @@
+---
+- name: Install Dependencies
+  ansible.builtin.yum:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - "@Development tools"
+    - wget
+    - openssl-devel
+    - libffi-devel
+    - bzip2-devel
+  become: yes
+  tags:
+    - python3-dependencies
+
+- name: Create downloads directory
+  ansible.builtin.file:
+    path: /home/{{ ansible_user }}/Downloads
+    state: directory
+    mode: '0755'
+
+- name: Download Python3 tar file with checksum (md5)
+  block:
+    - name: Download file and check
+      ansible.builtin.get_url:
+        url: https://www.python.org/ftp/python/3.10.5/Python-{{ python3_version }}.tgz
+        dest: /home/{{ ansible_user }}/Downloads/Python-{{ python3_version }}.tgz
+        checksum: md5:{{ python3_checksum }}
+
+    - name: Unarchive file
+      ansible.builtin.unarchive:
+        src: /home/{{ ansible_user }}/Downloads/Python-{{ python3_version }}.tgz
+        dest: /home/{{ ansible_user }}/Downloads
+        remote_src: yes
+        creates: /home/{{ ansible_user }}/Downloads/Python-{{ python3_version }}
+
+    - name: Show Checksum used
+      ansible.builtin.debug:
+        msg: "{{ python3_checksum }}"
+  tags:
+    - python3-download
+
+- name: Install downloaded Python3
+  block:
+    - name: Run Python3 config
+      ansible.builtin.command:
+        cmd: /home/{{ ansible_user }}/Downloads/Python-{{ python3_version }}/.configure --enable-optimizations --with-openssl={{ openssl_path }}
+        creates: /home/{{ ansible_user }}/Downloads/Python-{{ python3_version }}/Makefile
+
+    - name: Run Make command ( This takes a while. ~5 min )
+      ansible.builtin.command:
+        argv:
+          - make altinstall -C /home/{{ ansible_user }}/Downloads/Python-{{ python3_version }}
+        creates: /usr/local/lib/python3.10
+      become: yes
+  tags:
+    - python3-install
