@@ -46,6 +46,7 @@
       ansible.builtin.command:
         chdir: /home/{{ ansible_user }}/Downloads/Python-{{ python3_version }}
         cmd: ./configure --enable-optimizations --with-openssl={{ openssl_path }}
+        cmd: ./configure --enable-optimizations --with-openssl={{ openssl_path }} CFLAGS="-I{{ openssl_path }}/include" LDFLAGS="-L{{ openssl_path }}/"
         creates: /home/{{ ansible_user }}/Downloads/Python-{{ python3_version }}/Makefile
 
     - name: Run Make command ( This takes a while. ~5 min )
