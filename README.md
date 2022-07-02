@@ -25,7 +25,7 @@ In this case Ansible is installed in the remote host.
 If Ansible is not installed in the remote host you can run the script in `scripts/ansible-install.sh`. To do this you can use the following comand from the repository main directory where &lt;user&gt; is the username of the remote machine and &lt;host&gt; the IP address or hostname of the remote machine. This script is going to update the yum repositories and install an older version of Ansible which is fine for now, it will install git too.
 
 ```sh
-$ ssh <user>@<host> 'bash -s' < scripts/ansible-install.sh
+$ ssh <user>@<host> 'sudo bash -s' < scripts/ansible-install.sh
 ```
 After this we have to get an ssh console in the machine and clone the repository here too. Run this command in your user's home directory
 ```sh

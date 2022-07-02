@@ -43,9 +43,20 @@
         selfsigned_not_after: +3650d
         selfsigned_digest: sha256
         provider: selfsigned
+
+        state: present
+        return_content: yes
+      register: ca_crt
       become: yes
 
-        
+    - name: Get CA certificate in control node 
+      ansible.builtin.copy:
+        content: "{{ ca_crt.certificate }}"
+        dest: /tmp/ca.crt
+      delegate_to: 127.0.0.1
+      tags:
+        - never
+
 
 
 
