@@ -8,3 +8,19 @@
     - role: ansible-install
       tags: [ local ]
     - role: cryptography-install
+
+  post_tasks:
+    - name: Refresh table of recently executed programs
+      ansible.builtin.shell:
+        cmd: hash -r
+      tags:
+        - local
+
+    - name: Remove old Ansible yum installation
+      ansible.builtin.yum:
+        name: ansible
+        state: absent
+      become: yes
+      tags:
+        - local
+
