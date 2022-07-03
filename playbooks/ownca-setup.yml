@@ -1,9 +1,0 @@
----
-- hosts: all
-
-# This playbook run all setup needed to use community.crypto 2.3.2 if using default variables
-  roles:
-    - openssl-install
-    - python3-install
-    - ansible-install
-    - cryptography-install

@@ -1,0 +1,34 @@
+---
+- hosts: all
+
+  tasks:
+    - name: Sign certificate signing request (CSR)
+      block:
+        - name: Sign with CA certificate
+          community.crypto.x509_certificate_pipe:
+            csr_path: /home/{{ ansible_user }}/Requests/{{ csr_file.split('.')[:-1] | join('.') }}.csr 
+            ownca_path: /etc/pki/CA/certs/ca-certificate.crt
+            ownca_privatekey_path: /etc/pki/CA/private/ca-certificate.key
+            ownca_privatekey_passphrase: "{{ secret_ca_passphrase }}"
+
+            ownca_not_after: "+720d"
+            ownca_not_before: "-1d"
+
+            provider: ownca
+          register: cert
+          become: yes
+
+        - name: Save signed certificate
+          ansible.builtin.copy:
+            content: "{{ cert.certificate }}"
+            dest: /home/{{ ansible_user }}/Requests/{{ csr_file.split('.')[:-1] | join('.') }}.crt
+
+        - name: Get signed certificate in control node
+          ansible.builtin.copy:
+            content: "{{ cert.certificate }}"
+            dest: /tmp/{{ csr_file.split('.')[:-1] | join('.') }}.crt
+          delegate_to: 127.0.0.1
+          tags:
+            - never
+
+      when: csr_file is defined

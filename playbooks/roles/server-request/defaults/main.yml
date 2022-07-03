@@ -1,0 +1,10 @@
+---
+country_name:             "CR"
+state_or_province_name:   "San Jose"
+locality_name:            "San Pedro"
+organization_name:        "CI-0143 I-2022 Ltd"
+organizational_unit_name: "Grupo 1"
+common_name:              "www.test.com"
+
+dir_key: "/etc/pki/tls/private"
+dir_csr: "/etc/pki/tls/certs"

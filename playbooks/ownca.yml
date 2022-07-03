@@ -1,0 +1,12 @@
+---
+- hosts: all
+
+  roles:
+    - role: ownca-certificate
+
+  post_tasks:
+    - name: Create directory to store requests
+      ansible.builtin.file:
+        path: /home/{{ ansible_user }}/Requests
+        state: directory
+        mode: '0755'
