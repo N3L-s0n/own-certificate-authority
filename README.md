@@ -3,18 +3,17 @@
 ## Requirements
 
 To build this Certificate Authority you need some basic requirements.
-- A linux machine where this repo is cloned (local host).
-- A CentOS 7 machine where the CA is going to be build (remote host).
+- A linux machine where this repo is cloned (control node).
+- A CentOS 7 machine where the CA is going to be build (managed node or host).
 - SSH access to the remote host.
 - [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html) on your local host or remote host.
 
-Note: The local and remote machine could be both the same. In this case everything is run locally.
+> Note: The control node and host could be both the same. In this case everything is run locally.
 
 There are many ways to run the build, we're going to describe two examples.
-- [Running Ansible in remote host](#running-ansible-in-remote-host).
-- [Running Ansible in local host](#running-ansible-in-local-host).
+- [Running Ansible in host](#running-ansible-in-remote-host).
+- [Control node and managed node](#control-node-and-managed-node).
 
-To run the examples go ahead a clone the repository on your local machine in the folder you want.
 
 ## Running Ansible in remote host
 
@@ -22,36 +21,37 @@ In this case Ansible is installed in the remote host.
 
 ### Install Ansible in remote host & clone repository
 
-If Ansible is not installed in the remote host you can run the script in `scripts/ansible-install.sh`. To do this you can use the following comand from the repository main directory where &lt;user&gt; is the username of the remote machine and &lt;host&gt; the IP address or hostname of the remote machine. This script is going to update the yum repositories and install an older version of Ansible which is fine for now, it will install git too.
+If Ansible is not installed in the remote host you can run the script in `scripts/ansible-install.sh`. To do this log into your remote machine using `ssh` then download the script with `wget` and make it executable to finally run it as root (sudo is needed since we're going to use yum to install ansible).
 
 ```sh
-ssh <user>@<host> 'sudo bash -s' < scripts/ansible-install.sh
+wget https://raw.githubusercontent.com/N3L-s0n/own-certificate-authority/master/scripts/ansible-install.sh
+chmod +x ansible-install.sh
+sudo ./ansible-install.sh
 ```
-After this we have to get an ssh console in the machine and clone the repository here too. Run this command in your user's home directory
+
+This script is going to update the yum repositories and install an older version of Ansible which is fine for now, it will also install git to clone this repository.
+
 ```sh
 git clone https://github.com/N3L-s0n/own-certificate-authority.git
-```
-And cd into the repository
-```sh
 cd own-certificate-authority
 ```
 
-
 ### Install OpenSSL and Python3.10
 
-Now that we have where to run our playbooks we can execute the `playbooks/ownca-setup.yml` playbook. It needs no variables but you can choose different OpenSSL and Python3.10 versions. This was tested using [openssl-1.1.1p](https://www.openssl.org/source/) and [Python-3.10.5](https://www.python.org/downloads/release/python-3105/)
+Now that we have where to run our playbooks we can execute the `playbooks/setup.yml` playbook. It needs no variables but you can choose different OpenSSL and Python3.10 versions. This was tested using [openssl-1.1.1p](https://www.openssl.org/source/) and [Python-3.10.5](https://www.python.org/downloads/release/python-3105/)
 
 ```sh
-# playbooks/ownca-setup.yml
+# playbooks/setup.yml
 ---
 - hosts: all
 
 # This playbook runs all setup needed to use community.crypto 2.3.2 if using default variables
   roles:
-    - openssl-install
-    - python3-install
-    - ansible-install
-    - cryptography-install
+    - role: openssl-install
+    - role: python3-install
+    - role: ansible-install
+      tags: [ local ]
+    - role: cryptography-install
 
 ```
 
@@ -62,7 +62,7 @@ To run the playbook you have to set the host machine and connection, since we're
 Change **&lt;user&gt;** with the username you used with ssh.
 
 ```sh
-ansible-playbook -i localhost, --connection local playbooks/ownca-setup.yml -u <user>
+ansible-playbook -i localhost, --connection local playbooks/setup.yml -u <user>
 ```
 
 Remove old ansible version
@@ -87,7 +87,7 @@ After this we should have OpenSSL, Python3.10, [Cryptography](https://pypi.org/p
 Now to get a certificate for our CA, we need to create a private key with a passphrase, a certificate signing request (CSR) and then create the certificate from this CSR using the generated key. This is all done by the playbook `playbooks/ownca-certificate.yml` you just need to set the variable for the passphrase, e.g `--extra-vars "secret_ca_passphrase=test_password"`. The private key uses the **RSA** cryptosystem with a **2048** size. Certificate basic data like country name and state can also be set using variables. The defaults one are:
 
 ```sh
-# playbooks/ca-csr-vars.yml
+# playbooks/roles/ownca-certificate/defaults/main.yml
 # You must change these according to your needs
 ---
 country_name:             "CR"
@@ -106,11 +106,31 @@ To run the playbook execute the command below.
 Change **&lt;user&gt;** with the username you used with ssh and **&lt;password&gt;** with your passphrase for the key.
 
 ```sh
-ansible-playbook -i localhost, --connection local playbooks/ownca-certificate.yml -u <user> --extra-vars "secret_ca_passphrase=<password>"
+ansible-playbook -i localhost, --connection local playbooks/ownca.yml -u <user> --extra-vars "secret_ca_passphrase=<password>"
 ```
 
-The private key and certificate are created in `/etc/pki/CA/`
+The private key and certificate are created in **/etc/pki/CA/**
 
-## Running Ansible in local host
+### Signing certificate signing requests (CSR)
 
-In this case Ansible is installed in our local host.
+We also include a playbook to sign request, first you need the request file stored in the CA machine, `scp` can be use to upload the file to the *Request/* directory which was created in the previous playbook. Run the following command if the CSR file is not in the remote machine yet.
+
+<br>
+
+Change **&lt;user&gt;** with the username you used with ssh, **&lt;ip&gt;** with your remote machine IP address and **&lt;path/to/csr&gt;** with the path to the CSR file, e.g `/tmp/www.test.com.csr`.
+
+```sh
+scp <path/to/csr> <user>@<ip>:~/Requests/.
+```
+
+To sign this request use `playbooks/sign.yml`. Change **&lt;user&gt;** with the username you used with ssh, **&lt;password&gt;** with your passphrase for the key and **&lt;*csr&gt;** with the name of the CSR file, e.g `www.test.com.csr`.
+
+```sh
+ansible-playbook -i localhost, --connection local playbooks/sign.yml -u <user> --extra-vars "csr_file=<*.csr> secret_ca_passphrase=<password>"
+```
+
+The signed certificate should now exists in the *Request/* directory with the same name but .crt extension. Send this file to the server which requested it.
+
+## Control node and managed node
+
+In this case Ansible is installed in a control node.
