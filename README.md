@@ -14,6 +14,7 @@ There are many ways to run the build, we're going to describe two examples.
 - [Running Ansible in host](#running-ansible-in-remote-host).
 - [Control node and managed node](#control-node-and-managed-node).
 
+To create a request that can be signed by this CA go to [this section](#creating-a-certificate-signing-request-(csr)-for-a-web-server)
 
 ## Running Ansible in remote host
 
@@ -24,16 +25,13 @@ In this case Ansible is installed in the remote host.
 If Ansible is not installed in the remote host you can run the script in `scripts/ansible-install.sh`. To do this log into your remote machine using `ssh` then download the script with `wget` and make it executable to finally run it as root (sudo is needed since we're going to use yum to install ansible).
 
 ```sh
-wget https://raw.githubusercontent.com/N3L-s0n/own-certificate-authority/master/scripts/ansible-install.sh
-chmod +x ansible-install.sh
-sudo ./ansible-install.sh
+wget https://raw.githubusercontent.com/N3L-s0n/own-certificate-authority/master/scripts/ansible-install.sh && chmod +x ansible-install.sh && sudo ./ansible-install.sh
 ```
 
 This script is going to update the yum repositories and install an older version of Ansible which is fine for now, it will also install git to clone this repository.
 
 ```sh
-git clone https://github.com/N3L-s0n/own-certificate-authority.git
-cd own-certificate-authority
+git clone https://github.com/N3L-s0n/own-certificate-authority.git && cd own-certificate-authority
 ```
 
 ### Install OpenSSL and Python3.10
@@ -65,13 +63,7 @@ Change **&lt;user&gt;** with the username you used with ssh.
 ansible-playbook -i localhost, --connection local playbooks/setup.yml -u <user>
 ```
 
-Remove old ansible version
-
-```sh
-sudo yum remove ansible -y
-```
-
-Then run hash to forget about ansible previous location
+Run `hash -r` to forget about ansible previous location
 
 ```sh
 hash -r
@@ -109,11 +101,11 @@ Change **&lt;user&gt;** with the username you used with ssh and **&lt;password&g
 ansible-playbook -i localhost, --connection local playbooks/ownca.yml -u <user> --extra-vars "secret_ca_passphrase=<password>"
 ```
 
-The private key and certificate are created in **/etc/pki/CA/**
+The private key and certificate are created in **/etc/pki/CA/private/** and **/etc/pki/CA/certs/** respectively.
 
 ### Signing certificate signing requests (CSR)
 
-We also include a playbook to sign request, first you need the request file stored in the CA machine, `scp` can be use to upload the file to the *Request/* directory which was created in the previous playbook. Run the following command if the CSR file is not in the remote machine yet.
+We also included a playbook to sign request, first you need the request file stored in the CA machine, `scp` can be use to upload the file to the *Request/* directory which was created in the previous playbook. Run the following command if the CSR file is not in the remote machine yet.
 
 <br>
 
@@ -134,3 +126,40 @@ The signed certificate should now exists in the *Request/* directory with the sa
 ## Control node and managed node
 
 In this case Ansible is installed in a control node.
+
+
+## Creating a certificate signing request (CSR) for a web server
+
+To create a CSR for our web server you should have Ansible installed in the web server or a control node.
+
+### Ansible installed in web server
+
+In this case you should clone the repository and run the setup playbook to install dependencies like OpenSSL 1.1.x and Cryptography. This will also install Ansible using pip3.10.
+
+```sh
+ansible-playbook -i localhost, --connection local playbooks/setup.yml -u <user> && hash -r
+```
+
+Now run the playbook to create the CSR file. Default values are:
+```sh
+# playbooks/roles/server-request/defaults/main.yml
+---
+country_name:             "CR"
+state_or_province_name:   "San Jose"
+locality_name:            "San Pedro"
+organization_name:        "CI-0143 I-2022 Ltd"
+organizational_unit_name: "Grupo 1"
+common_name:              "www.test.com"
+
+dir_key: "/etc/pki/tls/private"
+dir_csr: "/etc/pki/tls/certs"
+```
+
+Change **&lt;user&gt;** with your machine username, **&lt;password&gt;** with a new passphrase for the key and **&lt;common_name&gt;** with the **hostname**
+> Note: the hostname is going to be added to the Subject Alternative Names (SAN) list of the request with the domain too.
+
+```sh
+ansible-playbook -i localhost, --connection local playbooks/server.yml -u <user> --extra-vars "secret_passphrase=<password> common_name=<common_name>"
+```
+
+Now you should have the request file in the `/etc/pki/tls/certs/` directory if you didn't change the variable `dir_csr`
