@@ -5,8 +5,11 @@
     executable: pip3.10
     extra_args: --user
 
-- name: 'Add upgraded ansible to PATH'
+- name: Remove old Ansible yum installation
+  ansible.builtin.yum:
+    name: ansible
+    state: absent
+
+- name: Refresh table of recently executed programs
   ansible.builtin.shell:
-    cmd: export PATH=/home/{{ ansible_user }}/.local/bin:$PATH
-  tags:
-    - never
+    cmd: hash -r
